@@ -1,0 +1,38 @@
+/**
+ * Dialogist.css
+ */
+
+body {
+  margin: 0;
+  background: #1a1a1a;
+}
+
+.grid {
+  width: 100%;
+  padding: 10px 40px;
+  margin: 0 auto;
+  list-style: none;
+}
+
+.clip {
+  display: inline-block;
+  margin: 4px 4px 0 0;
+  width: 200px;
+  height: 60px;
+  padding: 10px 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  box-shadow: 0 0 3px #3a3a3a;
+}
+
+  .clip h1 { 
+    margin: 0;
+    padding: 0;
+    color: #a4a4a4;
+    font-size: 16px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
