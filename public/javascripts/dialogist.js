@@ -70,6 +70,10 @@
       "click [data-view='clip']": "play"
     },
 
+    initialize: function() {
+      this.listenTo(this.collection, "add", this.insertClip);
+    },
+
     render: function() {
       var i, len, view, views = [];
 
@@ -99,9 +103,42 @@
 
       if(current.length) {
         this.collection.get(current.data('cid')).trigger('stop');
+
+        // Just stop if the same clip
+        if(next.data('cid') === current.data('cid')) return;
       }
 
       this.collection.get(next.data('cid')).trigger('play');
+    },
+
+    /**
+     * Render the clip into the view
+     *
+     * @param {Backbone.Model} clip
+     */
+
+    insertClip: function(clip) {
+      var i, len, cid, view;
+
+      view = new Views.Clip({
+        model:  clip
+      });
+
+      for(i = 0, len = this.collection.length; i < len; i++) {
+        cid = this.collection.at(i).cid;
+
+        if(cid === clip.cid) {
+          if((i === 0 && len > 1) || i < len - 1) {
+            cid = this.collection.at(i + 1).cid;
+            cid = this.$el.children("[data-cid='" + cid + "']");
+            cid.before(view.render().el);
+          } else {
+            this.$el.append(view.render().el);
+          }
+
+          break;
+        }
+      }
     }
   });
 
@@ -119,6 +156,14 @@
       }).render();
     }
   });
+
+  var events = new EventSource("/events/");
+
+  events.onmessage = function(e) {
+    var clip = JSON.parse(e.data);
+
+    SoundBoard.Clips.add(clip);
+  };
 
   return SoundBoard;
 })(window)

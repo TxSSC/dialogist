@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"gopkg.in/fsnotify.v1"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -33,8 +34,30 @@ func init() {
 }
 
 func main() {
+	broker := &Broker{
+		make(map[chan []byte]bool),
+		make(chan []byte),
+	}
+
+	go broker.Process()
+
+	watcher, err := fsnotify.NewWatcher()
+
+	if err != nil {
+		log.Fatal("Unable to initialize fsnotify:", err)
+	}
+
+	defer watcher.Close()
+
+	watcher.Add(config.ClipPath)
+
+	// Start watching
+	go watchClips(watcher, broker)
+	log.Println("Watching clips...")
+
 	// Server routes
 	http.Handle("/", http.FileServer(http.Dir("./public")))
+	http.Handle("/events/", broker)
 	http.HandleFunc("/clips/", serveClips)
 
 	var port string
@@ -80,7 +103,7 @@ func serveClips(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(msg)
 }
 
@@ -94,5 +117,32 @@ func createClip(file *os.FileInfo) Clip {
 	return Clip{
 		Title:    title,
 		Location: location,
+	}
+}
+
+func watchClips(w *fsnotify.Watcher, b *Broker) {
+	for {
+		select {
+		case event := <-w.Events:
+			if event.Op&fsnotify.Create == fsnotify.Create {
+				file, err := os.Stat(event.Name)
+
+				if err != nil {
+					log.Println("Error stat'in created file:", err)
+				}
+
+				clip := createClip(&file)
+				msg, err := json.Marshal(clip)
+
+				if err != nil {
+					log.Printf("Error serializing clip %v\n", clip)
+				}
+
+				b.Send(msg)
+			}
+
+		case err := <-w.Errors:
+			log.Println("fsnotify error:", err)
+		}
 	}
 }
