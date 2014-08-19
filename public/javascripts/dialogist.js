@@ -16,7 +16,7 @@
   });
 
   Views.Clip = Backbone.View.extend({
-    tagName: 'li',
+    tagName: 'div',
     className: "clip",
 
     attributes: function() {
@@ -26,7 +26,7 @@
       };
     },
 
-    template: _.template("<h1><%= title %></h1><audio src='<%= location %>' preload='auto'></audio>"),
+    template: _.template("<div><h1><%= title %></h1></div><audio src='<%= location %>' preload='auto'></audio>"),
 
     initialize: function() {
       this.listenTo(this.model, 'play', this.play);
