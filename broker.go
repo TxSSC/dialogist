@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type Broker struct {
@@ -21,7 +23,7 @@ func (b *Broker) Process() {
 				s <- msg
 			}
 
-			log.Printf("Broadcasted new clip to %d clients...", len(b.clients))
+			log.Printf("Broadcasted to %d clients...", len(b.clients))
 		}
 	}
 }
@@ -66,21 +68,29 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Content-Type", "text/event-stream")
 
-	for {
-		b := false
+	t := time.Now()
+	br := false
 
+	for {
 		select {
 		case <-n.CloseNotify():
-			b = true
+			br = true
 
 		case msg := <-c:
 			fmt.Fprintf(w, "data: %s\n\n", msg)
 
 			f.Flush()
+
+		default:
+			if time.Since(t).Seconds() > 10 {
+				t = time.Now()
+				msg := []byte(strconv.FormatInt(t.Unix(), 10))
+
+				b.Send(msg)
+			}
 		}
 
-		// CloseNotifier triggered
-		if b {
+		if br {
 			break
 		}
 	}

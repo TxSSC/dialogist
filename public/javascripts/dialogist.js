@@ -162,6 +162,9 @@
   events.onmessage = function(e) {
     var clip = JSON.parse(e.data);
 
+    // Skip if just a heartbeat
+    if(!isNaN(clip)) return;
+
     SoundBoard.Clips.add(clip);
   };
 
