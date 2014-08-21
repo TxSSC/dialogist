@@ -82,7 +82,7 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			f.Flush()
 
 		default:
-			if time.Since(t).Seconds() > 10 {
+			if time.Since(t).Seconds() > 30 {
 				t = time.Now()
 				msg := []byte(strconv.FormatInt(t.Unix(), 10))
 
